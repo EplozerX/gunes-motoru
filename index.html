@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <title>Güneş Enerjili El Yapımı Motor • 3D Proje Modeli</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header>
+        <div>
+          <div class="eyebrow">11. Sınıf • Fizik Projesi</div>
+          <div class="heading">Güneş enerjili el yapımı motor</div>
+          <div class="subtitle">
+            Parmağınla döndür • İki parmakla yakınlaştır • Parçalara dokun
+          </div>
+        </div>
+        <div class="tag">ETKİLEŞİMLİ 3D KONSEPT</div>
+      </header>
+      <div class="work">
+        <div class="stage" id="stage">
+          <canvas
+            id="view"
+            tabindex="0"
+            aria-label="Döndürülebilir üç boyutlu proje modeli"
+            aria-describedby="viewHelp"
+            >Tarayıcınız Canvas desteklemiyor. Güncel Safari veya Chrome
+            kullanın.</canvas
+          >
+          <div id="loadStatus" class="load-status" role="status">
+            <strong>3D model açılıyor…</strong>
+            <p>
+              Bu mesaj kalıyorsa dosya önizleyicisi JavaScript’i engelliyor
+              olabilir. Sayfayı web adresinden Safari veya Chrome’da açın;
+              bilgisayarda <code>npm run dev</code> kullanın.
+            </p>
+            <button id="retry" type="button">Yeniden dene</button>
+          </div>
+          <noscript
+            ><div class="load-status">
+              <strong>JavaScript kapalı veya bu önizlemede engellenmiş.</strong>
+              <p>
+                Etkileşimli model için sayfayı web adresinden Safari veya
+                Chrome’da açın ve JavaScript’i etkinleştirin. Bilgisayarda
+                <code>npm run dev</code> kullanın.
+              </p>
+            </div></noscript
+          >
+          <div class="badge-top">Maket tabanı: yaklaşık 45 × 30 cm</div>
+          <div class="badge-bottom" id="viewHelp">
+            ↔ Döndür &nbsp; • &nbsp; ◉ Parça seç &nbsp; • &nbsp; ⇔
+            Yakınlaştır<br />Klavye: oklar · +/− · Home
+          </div>
+          <div class="controls">
+            <button
+              class="control"
+              id="zoomIn"
+              aria-label="Yakınlaştır"
+              title="Yakınlaştır"
+            >
+              +</button
+            ><button
+              class="control"
+              id="zoomOut"
+              aria-label="Uzaklaştır"
+              title="Uzaklaştır"
+            >
+              −</button
+            ><button
+              class="control"
+              id="reset"
+              aria-label="Görünümü sıfırla"
+              title="Görünümü sıfırla"
+            >
+              ⟲</button
+            ><button
+              class="control toggled"
+              id="wires"
+              aria-label="Temsili kabloları göster/gizle"
+              aria-pressed="true"
+              title="Kabloları gizle/göster"
+            >
+              ⌁
+            </button>
+          </div>
+        </div>
+        <div class="side">
+          <section class="pane" aria-live="polite">
+            <h2>Seçili parça</h2>
+            <div id="componentIcon" class="component-icon">⚙️</div>
+            <div class="comp-name" id="componentName">
+              El yapımı bobinli motor
+            </div>
+            <div class="comp-desc" id="componentDesc">
+              Emaye kaplı bakır telden sarılan bobin, sabit mıknatısın alanında
+              dönüyor. Milin ucundaki hafif pervane de hareket ediyor.
+            </div>
+            <div class="meta" id="componentMeta">
+              <span>DIY</span><span>Elektromanyetizma</span>
+            </div>
+          </section>
+          <section class="pane">
+            <h2>Görsel motor denemesi</h2>
+            <button id="motorBtn" aria-pressed="false" class="switch off">
+              ▶ Pervaneyi döndür
+            </button>
+            <p class="notice">
+              Bu düğme yalnızca <strong>3D animasyonu</strong> başlatır.
+              Fiziksel motora komut göndermez.
+            </p>
+          </section>
+          <section class="pane">
+            <h2>Enerji hattı</h2>
+            <div class="notice">
+              <strong
+                >Güneş paneli → uyumlu 1S Li-ion güneş şarj kartı → korumalı
+                18650 → uygun DC-DC besleme</strong
+              ><br />Elektronik ve anahtarlı motor ayrı kollardır. INA219,
+              seçilen kolun akımını ve gerilimini ölçer.
+            </div>
+            <p class="notice" style="margin-bottom: 0">
+              Kablolar ve pil yüzdesi <strong>temsili</strong>; çizgiler ve
+              renkler bağlantı talimatı değildir. Motorun gerilimi ve kalkış
+              akımı ayrıca belirlenir.
+            </p>
+          </section>
+        </div>
+      </div>
+      <aside class="safety">
+        <strong>3D yerleşim maketi • Kesin devre şeması değildir.</strong> Pil,
+        şarj kartı, DC-DC ve gerçek pin bağlantıları seçilen ürünlerin
+        datasheet’lerine göre doğrulanmalıdır. Pil koruması şarj kontrolünün
+        yerini tutmaz. Kısa devre yapmayın; hasarlı hücre kullanmayın.
+      </aside>
+      <div class="parts" id="parts" aria-label="Parça seçimi"></div>
+      <div class="footer">
+        <span
+          >Konsept yerleşimi • Ölçek yaklaşık • Taban, bağlantılar, devreler ve
+          pervane dahil</span
+        ><span>Tasarım: Fizik projesi</span>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        var status = document.getElementById("loadStatus");
+        var timer;
+        window.showModelError = function (error) {
+          clearTimeout(timer);
+          console.error("[Güneş motoru]", error);
+          status.hidden = false;
+          status.setAttribute("role", "alert");
+          status.querySelector("strong").textContent = "3D model açılamadı.";
+          status.querySelector("p").textContent =
+            "Güncel Safari veya Chrome kullanın. Dosya önizlemesi yerine web adresinden açın. Yerel kurulum: npm run dev. Sorun sürerse tarayıcı konsolundaki hata ayrıntısını kontrol edin.";
+          document.getElementById("view").dataset.ready = "false";
+        };
+        window.modelReady = function () {
+          clearTimeout(timer);
+          status.hidden = true;
+        };
+        window.addEventListener("error", function (event) {
+          window.showModelError(
+            event.error || event.message || "Kaynak yüklenemedi",
+          );
+        });
+        window.addEventListener("unhandledrejection", function (event) {
+          window.showModelError(event.reason);
+        });
+        document.getElementById("retry").onclick = function () {
+          location.reload();
+        };
+        timer = setTimeout(function () {
+          window.showModelError(new Error("Model başlatma zaman aşımı"));
+        }, 10000);
+      })();
+    </script>
+    <script
+      defer
+      src="./model.js"
+      onerror="window.showModelError(new Error('model.js yüklenemedi'))"
+    ></script>
+  </body>
+</html>
