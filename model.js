@@ -881,7 +881,7 @@
       if (before > 4 && after > 4)
         P.dist = clamp((P.dist * before) / after, 420, 1100);
     } else if (pointers.size === 1 && !gesture.multi) {
-      P.yaw += (e.clientX - old.x) * 0.007;
+      P.yaw -= (e.clientX - old.x) * 0.007;
       P.pitch = clamp(P.pitch + (e.clientY - old.y) * 0.006, 0.13, 1.43);
     }
     invalidate();
@@ -953,10 +953,10 @@
   canvas.addEventListener("keydown", (e) => {
     switch (e.key) {
       case "ArrowLeft":
-        P.yaw -= 0.1;
+        P.yaw += 0.1;
         break;
       case "ArrowRight":
-        P.yaw += 0.1;
+        P.yaw -= 0.1;
         break;
       case "ArrowUp":
         P.pitch = clamp(P.pitch - 0.08, 0.13, 1.43);
