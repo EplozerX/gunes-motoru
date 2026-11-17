@@ -12,7 +12,7 @@
       content="Güneş ışığının harekete dönüştüğü etkileşimli fizik laboratuvarı. 3D motor modelini döndür, parçalarını keşfet ve enerji yolculuğunu incele."
     />
     <title>Güneş Lab — Işıktan harekete.</title>
-    <link rel="stylesheet" href="./styles.css?v=lab-2" />
+    <link rel="stylesheet" href="./styles.css?v=bench-3" />
   </head>
   <body>
     <a class="skip-link" href="#view">3D modele geç</a>
@@ -54,146 +54,203 @@
                 <path d="m8 4 7 6-7 6V4Z" /></svg
               >Keşif turu</button
             ><a class="text-link" href="#explore"
-              >Düzeneği keşfet <span aria-hidden="true"><svg class="arrow-ne" width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 15 15 5M5 5h10v10"/></svg></span></a
-            >
+              >Düzeneği keşfet
+              <span aria-hidden="true"
+                ><svg
+                  class="arrow-ne"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path d="M5 15 15 5M5 5h10v10" /></svg></span
+            ></a>
           </div>
         </section>
 
         <div class="work">
-          <section
-            class="stage"
-            id="stage"
-            aria-label="Etkileşimli üç boyutlu deney düzeneği"
-          >
-            <canvas
-              id="view"
-              tabindex="0"
-              aria-label="Döndürülebilir üç boyutlu proje modeli"
-              aria-describedby="viewHelp"
-              >Tarayıcınız Canvas desteklemiyor. Güncel Safari veya Chrome
-              kullanın.</canvas
+          <div class="bench-column">
+            <section
+              class="stage bench-stage"
+              id="stage"
+              aria-label="Etkileşimli üç boyutlu deney düzeneği"
             >
-            <div class="scene-heading">
-              <span class="scene-indicator" aria-hidden="true"></span
-              ><span>DENEY DÜZENEĞİ</span><span class="scene-number">/ 3D</span>
-            </div>
-            <div class="badge-top">
-              45 × 30 cm <span>· Yaklaşık ölçek</span>
-            </div>
-            <div class="scene-orbit" aria-hidden="true"></div>
-            <div id="loadStatus" class="load-status" role="status">
-              <strong>3D model açılıyor…</strong>
-              <p>
-                Bu mesaj kalıyorsa dosya önizleyicisi JavaScript’i engelliyor
-                olabilir. Sayfayı web adresinden Safari veya Chrome’da açın;
-                bilgisayarda <code>npm run dev</code> kullanın.
-              </p>
-              <button id="retry" type="button">Yeniden dene</button>
-            </div>
-            <noscript
-              ><div class="load-status">
-                <strong
-                  >JavaScript kapalı veya bu önizlemede engellenmiş.</strong
-                >
+              <canvas
+                id="view"
+                tabindex="0"
+                aria-label="Döndürülebilir üç boyutlu proje modeli"
+                aria-describedby="viewHelp"
+                >Tarayıcınız Canvas desteklemiyor. Güncel Safari veya Chrome
+                kullanın.</canvas
+              >
+              <div class="scene-heading">
+                <span class="scene-indicator" aria-hidden="true"></span
+                ><span>BEYAZ ÇALIŞMA MASASI</span
+                ><span class="scene-number">/ 3D</span>
+              </div>
+              <div class="badge-top">
+                45 × 30 cm <span>· Örnek terminal yerleşimi</span>
+              </div>
+              <div class="scene-orbit" aria-hidden="true"></div>
+              <div id="loadStatus" class="load-status" role="status">
+                <strong>3D model açılıyor…</strong>
                 <p>
-                  Etkileşimli model için sayfayı web adresinden Safari veya
-                  Chrome’da açın ve JavaScript’i etkinleştirin. Bilgisayarda
-                  <code>npm run dev</code> kullanın.
+                  Bu mesaj kalıyorsa dosya önizleyicisi JavaScript’i engelliyor
+                  olabilir. Sayfayı web adresinden Safari veya Chrome’da açın;
+                  bilgisayarda <code>npm run dev</code> kullanın.
                 </p>
-              </div></noscript
-            >
-            <div class="controls" aria-label="Model kontrolleri">
-              <button
-                class="control"
-                id="zoomIn"
-                type="button"
-                aria-label="Yakınlaştır"
-                title="Yakınlaştır"
+                <button id="retry" type="button">Yeniden dene</button>
+              </div>
+              <noscript
+                ><div class="load-status">
+                  <strong
+                    >JavaScript kapalı veya bu önizlemede engellenmiş.</strong
+                  >
+                  <p>
+                    Etkileşimli model için sayfayı web adresinden Safari veya
+                    Chrome’da açın ve JavaScript’i etkinleştirin. Bilgisayarda
+                    <code>npm run dev</code> kullanın.
+                  </p>
+                </div></noscript
               >
-                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                  <path d="M10 4v12M4 10h12" />
-                </svg>
-              </button>
-              <button
-                class="control"
-                id="zoomOut"
-                type="button"
-                aria-label="Uzaklaştır"
-                title="Uzaklaştır"
-              >
-                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                  <path d="M4 10h12" />
-                </svg>
-              </button>
-              <span class="control-divider" aria-hidden="true"></span>
-              <button
-                class="control"
-                id="reset"
-                type="button"
-                aria-label="Görünümü sıfırla"
-                title="Görünümü sıfırla"
-              >
-                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                  <path d="M4.5 6a6.5 6.5 0 1 1-1 6M4 2.5V7h4.5" />
-                </svg>
-              </button>
-              <button
-                class="control toggled"
-                id="wires"
-                type="button"
-                aria-label="Temsili kabloları göster/gizle"
-                aria-pressed="true"
-                title="Kabloları gizle/göster"
-              >
-                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                  <path
-                    d="M3 5h5v10h9M3 15h5M13 5h4M3 3v4m14-4v4m0 6v4M3 13v4"
-                  />
-                </svg>
-              </button>
-            </div>
-            <div class="scene-toolbar">
-              <div
-                class="view-switcher"
-                role="group"
-                aria-label="Kamera görünümü"
-              >
+              <div class="controls" aria-label="Model kontrolleri">
                 <button
+                  class="control"
+                  id="zoomIn"
                   type="button"
-                  data-view="perspective"
-                  aria-pressed="true"
+                  aria-label="Yakınlaştır"
+                  title="Yakınlaştır"
                 >
-                  Perspektif</button
-                ><button type="button" data-view="top" aria-pressed="false">
-                  Üstten</button
-                ><button type="button" data-view="front" aria-pressed="false">
-                  Önden
+                  <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M10 4v12M4 10h12" />
+                  </svg>
+                </button>
+                <button
+                  class="control"
+                  id="zoomOut"
+                  type="button"
+                  aria-label="Uzaklaştır"
+                  title="Uzaklaştır"
+                >
+                  <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M4 10h12" />
+                  </svg>
+                </button>
+                <span class="control-divider" aria-hidden="true"></span>
+                <button
+                  class="control"
+                  id="reset"
+                  type="button"
+                  aria-label="Görünümü sıfırla"
+                  title="Görünümü sıfırla"
+                >
+                  <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M4.5 6a6.5 6.5 0 1 1-1 6M4 2.5V7h4.5" />
+                  </svg>
+                </button>
+                <button
+                  class="control toggled"
+                  id="wires"
+                  type="button"
+                  aria-label="Temsili kabloları göster/gizle"
+                  aria-pressed="true"
+                  title="Kabloları gizle/göster"
+                >
+                  <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path
+                      d="M3 5h5v10h9M3 15h5M13 5h4M3 3v4m14-4v4m0 6v4M3 13v4"
+                    />
+                  </svg>
+                </button>
+                <button
+                  class="control toggled"
+                  id="terminalToggle"
+                  type="button"
+                  aria-label="Bağlantı uçlarını göster/gizle"
+                  aria-pressed="true"
+                  title="Bağlantı uçlarını göster/gizle"
+                >
+                  <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <circle cx="6" cy="6" r="4" />
+                    <path d="M6 4v4M4 6h4" />
+                    <circle cx="14" cy="14" r="4" />
+                    <path d="M12 14h4" />
+                  </svg>
                 </button>
               </div>
-              <div class="badge-bottom" id="viewHelp">
-                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                  <path
-                    d="m4 6 3-3 3 3M7 3v9m6-4 3 3-3 3m3-3H7M4 15l3 3 3-3"
-                  /></svg
-                ><span
-                  >Sürükle, döndür · İki parmakla yakınlaştır<span
-                    class="keyboard-hint"
+              <div class="scene-toolbar">
+                <div
+                  class="view-switcher"
+                  role="group"
+                  aria-label="Kamera görünümü"
+                >
+                  <button
+                    type="button"
+                    data-view="perspective"
+                    aria-pressed="true"
                   >
-                    · Oklar / + − / Home</span
-                  ></span
+                    Perspektif</button
+                  ><button type="button" data-view="top" aria-pressed="false">
+                    Üstten</button
+                  ><button type="button" data-view="front" aria-pressed="false">
+                    Önden
+                  </button>
+                </div>
+                <div class="badge-bottom" id="viewHelp">
+                  <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path
+                      d="m4 6 3-3 3 3M7 3v9m6-4 3 3-3 3m3-3H7M4 15l3 3 3-3"
+                    /></svg
+                  ><span
+                    >Sürükle, döndür · İki parmakla yakınlaştır<span
+                      class="keyboard-hint"
+                    >
+                      · Oklar / + − / Home</span
+                    ></span
+                  >
+                </div>
+              </div>
+              <div id="viewStatus" class="sr-only" aria-live="polite">
+                Perspektif görünümü
+              </div>
+            </section>
+            <div class="wiring-legend" aria-label="Çizimdeki kablo renkleri">
+              <div class="wiring-legend-chips">
+                <span class="wire-chip wire-positive"
+                  ><i aria-hidden="true"></i><strong>+V</strong> Besleme</span
+                ><span class="wire-chip wire-ground"
+                  ><i aria-hidden="true"></i><strong>− GND</strong> Dönüş</span
+                ><span class="wire-chip wire-sda"
+                  ><i aria-hidden="true"></i><strong>SDA</strong> Veri</span
+                ><span class="wire-chip wire-scl"
+                  ><i aria-hidden="true"></i><strong>SCL</strong> Saat</span
+                ><span class="wire-chip wire-motor"
+                  ><i aria-hidden="true"></i><strong>Motor +</strong></span
                 >
               </div>
+              <p>
+                Renkler bu çizimin açıklamasıdır; gerçek kablo standardı
+                değildir.
+              </p>
             </div>
-            <div id="viewStatus" class="sr-only" aria-live="polite">
-              Perspektif görünümü
-            </div>
-          </section>
+          </div>
 
           <aside class="side" aria-label="Parça ve animasyon kontrolleri">
             <section class="pane selected-pane" aria-live="polite">
               <div class="pane-label">
                 <span>MERCEK ALTINDA</span
-                ><span class="tiny-cross" aria-hidden="true"><svg class="arrow-ne" width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 15 15 5M5 5h10v10"/></svg></span>
+                ><span class="tiny-cross" aria-hidden="true"
+                  ><svg
+                    class="arrow-ne"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path d="M5 15 15 5M5 5h10v10" /></svg
+                ></span>
               </div>
               <div class="component-intro">
                 <div
@@ -238,7 +295,9 @@
             <section class="pane motor-pane">
               <div class="pane-label">
                 <span>HAREKETE GEÇİR</span
-                ><span id="motorStatus" class="motor-status">Denemeye hazır</span>
+                ><span id="motorStatus" class="motor-status"
+                  >Denemeye hazır</span
+                >
               </div>
               <button
                 id="motorBtn"
@@ -301,6 +360,20 @@
               >Parçalar<span class="tab-count">11</span></button
             ><button
               type="button"
+              id="wiringTab"
+              data-explore="wiring"
+              role="tab"
+              aria-selected="false"
+              aria-controls="wiringPanel"
+              tabindex="-1"
+            >
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path
+                  d="M3 4h5v12h9M3 16h5M13 4h4M3 2v4m14-4v4m0 8v4M3 14v4"
+                /></svg
+              >Bağlantı planı</button
+            ><button
+              type="button"
               id="energyTab"
               data-explore="energy"
               role="tab"
@@ -353,6 +426,68 @@
           </section>
 
           <section
+            id="wiringPanel"
+            class="explore-panel"
+            role="tabpanel"
+            aria-labelledby="wiringTab"
+            hidden
+          >
+            <div class="wire-plan-card">
+              <div class="wire-plan-heading">
+                <div>
+                  <p class="micro-label">ÖRNEK BAĞLANTI PLANI</p>
+                  <h3>Bağlantıları adım adım takip et.</h3>
+                  <p class="wire-plan-subtitle">
+                    Bir bağlantı grubunu seç; artı, eksi ve veri yollarını ayrı
+                    ayrı incele.
+                  </p>
+                </div>
+                <span class="wire-plan-status"
+                  ><span aria-hidden="true"></span>Örnek plan · ürün modelleri
+                  doğrulanmadı</span
+                >
+              </div>
+              <p class="wire-plan-assumption">
+                Gerçek kartın pin dizilimi modeline göre doğrulanır. Bu görünüm,
+                varsayılan işlevsel terminal adlarıyla hazırlanmış örnek bir
+                bağlantı planıdır.
+              </p>
+              <div
+                id="wirePlanControls"
+                class="wire-plan-controls"
+                role="group"
+                aria-label="Bağlantı grubu"
+              ></div>
+              <div
+                id="wirePlanSurface"
+                class="wire-plan-surface"
+              ></div>
+              <p class="wire-plan-pan-hint">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path d="M3 10h14M6 7l-3 3 3 3m8-6 3 3-3 3" /></svg
+                >Çizimi yatay kaydırarak inceleyebilirsin. Bağlantı açıklamaları
+                aşağıda.
+              </p>
+              <div
+                id="wirePlanSummary"
+                class="wire-plan-summary"
+                aria-live="polite"
+              ></div>
+              <div
+                id="wirePlanList"
+                class="wire-plan-list"
+                aria-label="Bağlantı açıklamaları"
+              ></div>
+            </div>
+          </section>
+
+          <section
             id="energyPanel"
             class="explore-panel"
             role="tabpanel"
@@ -386,7 +521,17 @@
                   ><span class="node-copy"
                     ><strong>Güneş paneli</strong
                     ><small>Işık → elektrik</small></span
-                  ><span class="node-go" aria-hidden="true"><svg class="arrow-ne" width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 15 15 5M5 5h10v10"/></svg></span>
+                  ><span class="node-go" aria-hidden="true"
+                    ><svg
+                      class="arrow-ne"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <path d="M5 15 15 5M5 5h10v10" /></svg
+                  ></span>
                 </button>
                 <button
                   class="flow-node"
@@ -403,7 +548,17 @@
                   ><span class="node-copy"
                     ><strong>Şarj kontrolü</strong
                     ><small>Uyumlu 1S Li-ion şarjı</small></span
-                  ><span class="node-go" aria-hidden="true"><svg class="arrow-ne" width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 15 15 5M5 5h10v10"/></svg></span>
+                  ><span class="node-go" aria-hidden="true"
+                    ><svg
+                      class="arrow-ne"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <path d="M5 15 15 5M5 5h10v10" /></svg
+                  ></span>
                 </button>
                 <button
                   class="flow-node"
@@ -418,7 +573,17 @@
                   ><span class="node-copy"
                     ><strong>Korumalı 18650</strong
                     ><small>Enerjiyi depolar</small></span
-                  ><span class="node-go" aria-hidden="true"><svg class="arrow-ne" width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 15 15 5M5 5h10v10"/></svg></span>
+                  ><span class="node-go" aria-hidden="true"
+                    ><svg
+                      class="arrow-ne"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <path d="M5 15 15 5M5 5h10v10" /></svg
+                  ></span>
                 </button>
                 <button class="flow-node" type="button" data-select-part="reg">
                   <span class="node-step">04</span
@@ -430,7 +595,17 @@
                   ><span class="node-copy"
                     ><strong>DC-DC düzenleyici</strong
                     ><small>Gereken beslemeyi sağlar</small></span
-                  ><span class="node-go" aria-hidden="true"><svg class="arrow-ne" width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 15 15 5M5 5h10v10"/></svg></span>
+                  ><span class="node-go" aria-hidden="true"
+                    ><svg
+                      class="arrow-ne"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <path d="M5 15 15 5M5 5h10v10" /></svg
+                  ></span>
                 </button>
               </div>
               <div class="energy-branches">
@@ -446,7 +621,17 @@
                     ><span
                       ><strong>ESP32 + elektronik</strong
                       ><small>Uygun 3,3 V / 5 V besleme</small></span
-                    ><span aria-hidden="true"><svg class="arrow-ne" width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 15 15 5M5 5h10v10"/></svg></span>
+                    ><span aria-hidden="true"
+                      ><svg
+                        class="arrow-ne"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 20 20"
+                        fill="none"
+                        aria-hidden="true"
+                      >
+                        <path d="M5 15 15 5M5 5h10v10" /></svg
+                    ></span>
                   </button>
                 </div>
                 <div class="branch-card">
@@ -461,7 +646,17 @@
                     ><span
                       ><strong>Anahtar + bobinli motor</strong
                       ><small>Gerilim ve akım motora göre seçilir</small></span
-                    ><span aria-hidden="true"><svg class="arrow-ne" width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 15 15 5M5 5h10v10"/></svg></span>
+                    ><span aria-hidden="true"
+                      ><svg
+                        class="arrow-ne"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 20 20"
+                        fill="none"
+                        aria-hidden="true"
+                      >
+                        <path d="M5 15 15 5M5 5h10v10" /></svg
+                    ></span>
                   </button>
                 </div>
               </div>
@@ -581,7 +776,17 @@
               </article>
             </div>
             <div class="physics-footnote">
-              <span class="footnote-symbol" aria-hidden="true"><svg class="arrow-ne" width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 15 15 5M5 5h10v10"/></svg></span>
+              <span class="footnote-symbol" aria-hidden="true"
+                ><svg
+                  class="arrow-ne"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path d="M5 15 15 5M5 5h10v10" /></svg
+              ></span>
               <p>
                 Modeldeki pervane hızı bir animasyon ayarıdır. Gerçek motorun
                 hızı ve torku; akıma, manyetik alana, bobine, sürtünmeye ve yüke
@@ -615,7 +820,16 @@
       </main>
       <footer class="footer">
         <a class="footer-brand" href="#"
-          >GÜNEŞ LAB<span aria-hidden="true"><svg class="arrow-ne" width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 15 15 5M5 5h10v10"/></svg></span></a
+          >GÜNEŞ LAB<span aria-hidden="true"
+            ><svg
+              class="arrow-ne"
+              width="14"
+              height="14"
+              viewBox="0 0 20 20"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path d="M5 15 15 5M5 5h10v10" /></svg></span></a
         ><span>Merakla tasarlandı. Fizikle çalışır.</span
         ><span class="footer-note"
           >Etkileşimli eğitim konsepti · 11. sınıf</span
@@ -765,10 +979,11 @@
         }, 10000);
       })();
     </script>
-    <script defer src="./part-details.js?v=lab-2"></script>
+    <script defer src="./part-details.js?v=bench-3"></script>
+    <script defer src="./wiring-plan.js?v=bench-3"></script>
     <script
       defer
-      src="./model.js?v=lab-2"
+      src="./model.js?v=bench-3"
       onerror="window.showModelError(new Error('model.js yüklenemedi'))"
     ></script>
   </body>

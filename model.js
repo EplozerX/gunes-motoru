@@ -38,6 +38,7 @@
         speed: String(P.speed),
         selected: P.selected,
         wires: String(P.wires),
+        terminalsVisible: String(P.terminals),
         running: String(P.run),
         renderCount: String(renderCount),
       });
@@ -72,6 +73,7 @@
     targetX: 0,
     targetZ: 0,
     wires: true,
+    terminals: true,
     selected: "motor",
   };
   const C = {
@@ -99,21 +101,21 @@
     reg: {
       icon: "⚡",
       name: "Gerilim düzenleyici",
-      desc: "Örnek giriş: yaklaşık 3,0–4,2 V pil. Bu aralığı destekleyen boost ile 5 V, yalnızca 5 V girişi kabul eden ESP32 geliştirme kartına verilir. 3V3 hattı için tüm pil aralığını kapsayan sabit 3,3 V buck-boost gerekir. Kesin giriş aralığı, düşük pil kesmesi ve çıkış akımı ürüne bağlıdır. Motor beslemesi ayrıca belirlenir.",
-      meta: ["Örnek giriş: 3,0–4,2 V", "5 V boost / 3,3 V buck-boost"],
+      desc: "Bu örnekte elektronik için sabit 3,3 V sağlayan, şarj kartının SYS çıkış aralığına uygun bir buck-boost kullanılır. SYS gerilimi pil gerilimiyle aynı varsayılmaz. ESP32 kartının dışarıdan 3V3 beslemeyi desteklemesi ve USB bağlantısının ayrılması gerekir. Motor ayrı, gerilimi ve akım sınırı seçilecek bir besleme kolundadır.",
+      meta: ["Örnek çıkış: 3,3 V", "SYS aralığına uygun buck-boost"],
       pos: [113, 20, -81],
     },
     sensor: {
       icon: "📏",
       name: "INA219 sensörü",
-      desc: "Şönt üzerinden seçilen kolun akımını ve gerilimini ölçer. ESP32 için 3,3 V I²C seviyeleri, ortak referans ve kartın şönt / akım sınırları doğrulanır. INA219 tek başına kesin pil yüzdesi ölçmez.",
+      desc: "Bu bağlantı örneğinde şarj kartının SYS çıkışından sonra toplam yük akımını ölçer; pilin şarj akımını ölçmez. VIN+ ve VIN− şöntün iki ucudur; VIN− toprak değildir. Sensörün ayrı VCC/GND beslemesi 3,3 V, veri hatları SDA/SCL’dir. Şönt ve akım sınırı ürüne göre doğrulanır.",
       meta: ["I²C", "Akım + voltaj"],
       pos: [-42, 21, 11],
     },
     esp: {
       icon: "🧠",
       name: "ESP32 kontrol kartı",
-      desc: "Sensör verilerini OLED ekrana iletir. GPIO’lar 3,3 V mantık seviyesindedir; motor GPIO’dan beslenmez. Geliştirme kartının 5 V / USB giriş koşulları modeline bağlıdır.",
+      desc: "Bu örnek, dışarıdan 3V3 beslemeyi desteklediği doğrulanan bir ESP32 kartını esas alır; USB bağlantısı ayrıdır. SDA ve SCL için yazılımda seçilen GPIO’lar gerçek karta göre belirlenir. Sensör verilerini OLED’e iletir; motor GPIO’dan beslenmez.",
       meta: ["Programlanabilir", "Arduino IDE"],
       pos: [57, 19, 12],
     },
@@ -196,6 +198,24 @@
       section.append(makeText("h3", card.title), makeText("p", card.text));
       return section;
     });
+    if (detailTab === "overview") {
+      const ports = terminalList.filter(
+        (terminal) => terminal.part === P.selected,
+      );
+      if (ports.length) {
+        const section = document.createElement("section");
+        section.className = "detail-section terminal-reference";
+        section.append(
+          makeText("h3", "Bu örnekteki bağlantı uçları"),
+          makeText("p", ports.map((terminal) => terminal.label).join(" · ")),
+          makeText(
+            "p",
+            "Etiketler işlevi gösterir; fiziksel pin sırası seçilecek karttan doğrulanır.",
+          ),
+        );
+        sections.push(section);
+      }
+    }
     if (info.fact && detailTab === "overview") {
       const fact = document.createElement("div");
       fact.className = "detail-fact";
@@ -219,7 +239,7 @@
     if (!dialog.open) {
       const trigger = opener?.currentTarget || opener;
       dialogOpener =
-        trigger instanceof HTMLElement
+        trigger instanceof Element && typeof trigger.focus === "function"
           ? trigger
           : document.activeElement instanceof HTMLElement &&
               document.activeElement !== document.body
@@ -228,6 +248,7 @@
       detailTab = "overview";
       renderDetail();
       dialog.showModal();
+      dialog.scrollTop = 0;
       document.body.classList.add("dialog-open");
     } else renderDetail();
   }
@@ -285,7 +306,10 @@
       x.classList.toggle("selected", x.dataset.part === id);
       x.setAttribute("aria-pressed", String(x.dataset.part === id));
     });
-    if (dialog?.open) renderDetail();
+    if (dialog?.open) {
+      renderDetail();
+      dialog.scrollTop = 0;
+    }
     if (open) showDetails(opener);
     invalidate();
   }
@@ -457,109 +481,219 @@
     );
     return pos;
   }
-  function wire3(points, color) {
-    if (P.wires) line(points, color, 2.8, 0.87);
+  const terminalMap = {};
+  const terminalList = [];
+  function defineTerminal(part, terminal, pos, kind, symbol, label = terminal) {
+    const item = { part, terminal, pos, kind, symbol, label };
+    terminalMap[part + "." + terminal] = item;
+    terminalList.push(item);
   }
+  const terminals = [
+    ["solar", "+", [-126, 31, -61], "power", "+"],
+    ["solar", "-", [-137, 31, -61], "ground", "−"],
+    ["charge", "PV+", [-84, 18, -101], "power", "+"],
+    ["charge", "PV-", [-84, 18, -90], "ground", "−"],
+    ["charge", "BAT+", [-58, 18, -107], "power", "+"],
+    ["charge", "BAT-", [-45, 18, -107], "ground", "−"],
+    ["charge", "SYS+", [-39, 18, -79], "power", "+"],
+    ["charge", "SYS-", [-39, 18, -68], "ground", "−"],
+    ["battery", "+", [53, 27, -83], "power", "+"],
+    ["battery", "-", [-8, 27, -83], "ground", "−"],
+    ["reg", "IN+", [90, 18, -95], "power", "+"],
+    ["reg", "IN-", [90, 18, -80], "ground", "−"],
+    ["reg", "OUT+", [136, 18, -96], "power", "+", "OUT+ · 3V3"],
+    ["reg", "OUT-", [136, 18, -80], "ground", "−"],
+    ["sensor", "VIN+", [-59, 18, -3], "power", "+"],
+    ["sensor", "VIN-", [-25, 18, -3], "power", "+", "VIN− · yük +"],
+    ["sensor", "VCC", [-58, 18, 29], "power", "+"],
+    ["sensor", "GND", [-48, 18, 29], "ground", "−"],
+    ["sensor", "SDA", [-38, 18, 29], "data", "D"],
+    ["sensor", "SCL", [-28, 18, 29], "clock", "C"],
+    ["esp", "3V3", [34, 25, 35], "power", "+"],
+    ["esp", "GND", [45, 25, 35], "ground", "−"],
+    ["esp", "SDA", [66, 25, 35], "data", "D"],
+    ["esp", "SCL", [77, 25, 35], "clock", "C"],
+    ["oled", "VCC", [133, 25, 14], "power", "+"],
+    ["oled", "GND", [146, 25, 14], "ground", "−"],
+    ["oled", "SDA", [159, 25, 14], "data", "D"],
+    ["oled", "SCL", [172, 25, 14], "clock", "C"],
+    ["switch", "1", [137, 19, 109], "motor", "1"],
+    ["switch", "2", [165, 19, 109], "motor", "2"],
+    ["motor", "M+", [-110, 25, 100], "motor", "+"],
+    ["motor", "M-", [-110, 25, 78], "ground", "−"],
+    ["fuse", "IN", [-96, 17, -34], "power", "+", "F1 · giriş"],
+    ["fuse", "OUT", [-70, 17, -34], "power", "+", "F1 · çıkış"],
+    ["motorSupply", "IN+", [67, 18, 79], "power", "+"],
+    ["motorSupply", "IN-", [67, 18, 98], "ground", "−"],
+    ["motorSupply", "OUT+", [101, 18, 79], "motor", "+"],
+    ["motorSupply", "OUT-", [101, 18, 98], "ground", "−"],
+    ["return", "GND", [185, 15, 58], "ground", "−", "SYS− · yıldız dönüş"],
+  ];
+  terminals.forEach((args) => defineTerminal(...args));
+  function owner(part) {
+    return (
+      { fuse: "charge", motorSupply: "motor", return: "charge" }[part] || part
+    );
+  }
+  function terminalAt(endpoint) {
+    const part = endpoint.part;
+    let terminal = String(endpoint.terminal)
+      .replace(/[−–]/g, "-")
+      .replace(/\s|\*/g, "");
+    if (part === "esp" && terminal.startsWith("SDA")) terminal = "SDA";
+    if (part === "esp" && terminal.startsWith("SCL")) terminal = "SCL";
+    if (part === "reg" && terminal.startsWith("OUT+")) terminal = "OUT+";
+    return terminalMap[part + "." + terminal];
+  }
+  const wireColors = {
+    power: "#c83832",
+    ground: "#263341",
+    data: "#166bd7",
+    clock: "#168866",
+    motor: "#c68116",
+  };
   function addWires() {
-    let routes = [
-      {
-        c: "#ff735a",
-        p: [
-          [-128, 12, -86],
-          [-110, 11, -115],
-          [-78, 11, -115],
-          [-61, 13, -92],
-        ],
-      },
-      {
-        c: "#ff735a",
-        p: [
-          [-42, 13, -91],
-          [-27, 11, -125],
-          [2, 11, -125],
-          [2, 17, -85],
-        ],
-      },
-      {
-        c: "#ff735a",
-        p: [
-          [47, 16, -83],
-          [74, 11, -122],
-          [113, 11, -122],
-          [113, 13, -81],
-        ],
-      },
-      {
-        c: "#ff735a",
-        p: [
-          [22, 15, -71],
-          [20, 11, -23],
-          [-42, 12, -23],
-          [-42, 15, 11],
-        ],
-      },
-      {
-        c: "#ff735a",
-        p: [
-          [20, 14, -70],
-          [92, 12, -54],
-          [57, 15, 11],
-        ],
-      },
-      {
-        c: "#ff735a",
-        p: [
-          [20, 12, -72],
-          [172, 11, -46],
-          [172, 11, 74],
-          [149, 15, 97],
-        ],
-      },
-      {
-        c: "#ff735a",
-        p: [
-          [128, 13, 102],
-          [80, 10, 132],
-          [-45, 10, 132],
-          [-76, 19, 91],
-        ],
-      },
-      {
-        c: "#61cafe",
-        p: [
-          [-27, 16, 14],
-          [7, 11, 42],
-          [38, 16, 14],
-        ],
-      },
-      {
-        c: "#61cafe",
-        p: [
-          [83, 15, 14],
-          [114, 11, 44],
-          [155, 17, 14],
-        ],
-      },
-      {
-        c: "#273548",
-        p: [
-          [-127, 11, -94],
-          [-104, 11, -134],
-          [-10, 10, -134],
-          [20, 16, -92],
-        ],
-      },
-      {
-        c: "#273548",
-        p: [
-          [20, 12, -76],
-          [40, 10, 115],
-          [120, 9, 138],
-          [-77, 16, 99],
-        ],
-      },
-    ];
-    routes.forEach((o) => wire3(o.p, o.c));
+    const connections = window.BENCH_CONNECTIONS || [];
+    let rendered = 0;
+    connections.forEach((connection, index) => {
+      const from = terminalAt(connection.from),
+        to = terminalAt(connection.to);
+      if (!from || !to) return;
+      let type = connection.net;
+      if (from.kind === "ground" || to.kind === "ground") type = "ground";
+      if (type === "data") type = from.terminal === "SCL" ? "clock" : "data";
+      const color = wireColors[type] || wireColors.power;
+      const height =
+        type === "ground"
+          ? 12.5
+          : type === "data" || type === "clock"
+            ? 15.5
+            : 14;
+      let lane;
+      if (connection.from.part === "solar")
+        lane = type === "ground" ? -137 : -126;
+      else if (connection.from.part === "battery")
+        lane = type === "ground" ? -119 : -128;
+      else if (type === "data" || type === "clock")
+        lane = type === "clock" ? 55 : 46;
+      else if (type === "ground")
+        lane =
+          type === "ground" && from.part === "motor"
+            ? 140
+            : 65 + (index % 3) * 3;
+      else if (type === "motor") lane = 139 - (index % 3) * 5;
+      else if (from.part === "reg") lane = -43 + (index % 3) * 4;
+      else if (from.part === "sensor") lane = to.part === "reg" ? -45 : 55;
+      else lane = -47 + (index % 3) * 5;
+      const a = from.pos,
+        b = to.pos;
+      const points = [
+        a,
+        [a[0], height, a[2]],
+        [a[0], height, lane],
+        [b[0], height, lane],
+        [b[0], height, b[2]],
+        b,
+      ];
+      // A pale sleeve makes crossings visually distinct from electrical junction dots.
+      line(points, "#ffffff", 5.1, 0.96);
+      line(points, color, 2.6, 0.98);
+      rendered++;
+    });
+    canvas.dataset.connectionCount = String(rendered);
+  }
+  function auxiliaryHardware() {
+    currentPart = "sensor";
+    box(-83, 12, -34, 31, 5, 13, ["#e7e9df", "#bfc6bd", "#a7b7ad"]);
+    cylX(-92, -74, 20, -34, 3.3, ["#c2d3d3", "#7da2a0"]);
+    currentPart = "motor";
+    board(84, 89, 38, 28, "reg");
+    box(84, 22, 89, 14, 4, 13, ["#b7d3df", "#799db1", "#637f91"]);
+    currentPart = "charge";
+    discY(185, 13, 58, 6, "#b4c4cb");
+    discY(185, 14, 58, 2.4, "#344f5d");
+  }
+  let terminalRegions = [];
+  function drawTerminals() {
+    terminalRegions = [];
+    if (!P.terminals) {
+      canvas.dataset.terminalCount = "0";
+      return;
+    }
+    let count = 0;
+    for (const terminal of terminalList) {
+      const q = proj(terminal.pos);
+      if (q[2] <= 0 || q[0] < 7 || q[0] > W - 7 || q[1] < 7 || q[1] > H - 7)
+        continue;
+      count++;
+      const color = wireColors[terminal.kind];
+      ctx.beginPath();
+      ctx.arc(q[0], q[1], 5.8, 0, Math.PI * 2);
+      ctx.fillStyle = "#fff";
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.font = "bold 8px system-ui";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(terminal.symbol, q[0], q[1] + 0.2);
+      terminalRegions.push({
+        id: owner(terminal.part),
+        x: q[0] - 7,
+        y: q[1] - 7,
+        w: 14,
+        h: 14,
+      });
+      if (owner(terminal.part) !== P.selected) continue;
+      const label = terminal.label;
+      ctx.font = "bold 9px system-ui";
+      const width = ctx.measureText(label).width + 12;
+      const placement = [
+        [12, -26],
+        [12, 8],
+        [-width - 12, -26],
+        [-width - 12, 8],
+        [12, -50],
+        [-width - 12, 32],
+        [12, 32],
+      ].find(([dx, dy]) => {
+        const x = q[0] + dx,
+          y = q[1] + dy;
+        return (
+          x >= 5 &&
+          x + width < W - 62 &&
+          y > 64 &&
+          y + 19 < H - 65 &&
+          !labelRegions.some(
+            (r) =>
+              x < r.x + r.w + 3 &&
+              x + width + 3 > r.x &&
+              y < r.y + r.h + 3 &&
+              y + 22 > r.y,
+          )
+        );
+      });
+      if (!placement) continue;
+      const x = q[0] + placement[0],
+        y = q[1] + placement[1];
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(q[0], q[1]);
+      ctx.lineTo(x + width / 2, y + 9);
+      ctx.stroke();
+      ctx.beginPath();
+      roundedRect(x, y, width, 19, 5);
+      ctx.fillStyle = "#fffffff5";
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.fillText(label, x + width / 2, y + 9.5);
+      labelRegions.push({ id: owner(terminal.part), x, y, w: width, h: 19 });
+    }
+    canvas.dataset.terminalCount = String(count);
   }
   function solar() {
     const cx = -164,
@@ -759,12 +893,12 @@
       H * 0.47,
       Math.max(W, H) * 0.75,
     );
-    background.addColorStop(0, "#142d3c");
-    background.addColorStop(0.55, "#0c1c29");
-    background.addColorStop(1, "#09121c");
+    background.addColorStop(0, "#ffffff");
+    background.addColorStop(0.55, "#f7f9fb");
+    background.addColorStop(1, "#e9eff4");
     ctx.fillStyle = background;
     ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = "#91afc015";
+    ctx.fillStyle = "#728ca01b";
     for (let x = 18; x < W; x += 28)
       for (let y = 18; y < H; y += 28) ctx.fillRect(x, y, 1, 1);
     setupCamera();
@@ -773,18 +907,18 @@
     currentPart = "base";
     // shadow + feet and base
     box(0, -6, 0, 460, 10, 305, [
-      "#526b79",
-      "#354653",
-      "#2f4455",
-      "#3c5261",
-      "#506775",
+      "#e4eaf0",
+      "#b9c6d0",
+      "#a7b9c5",
+      "#c4cfd6",
+      "#d9e1e7",
     ]);
     box(0, 4, 0, 452, 7, 298, [
-      "#375b71",
-      "#243c50",
-      "#273b4c",
-      "#2b4759",
-      "#466a80",
+      "#ffffff",
+      "#e1e7eb",
+      "#d6dfe5",
+      "#edf1f4",
+      "#fafcfd",
     ]);
     for (let x of [-209, 209])
       for (let z of [-132, 132]) {
@@ -793,6 +927,7 @@
     sceneLayer = 1;
     currentPart = null;
     if (P.wires) addWires();
+    else canvas.dataset.connectionCount = "0";
     currentPart = "solar";
     solar();
     currentPart = "charge";
@@ -813,6 +948,7 @@
     motor();
     currentPart = "fan";
     fan();
+    auxiliaryHardware();
     shapes.sort((a, b) => a.layer - b.layer || b.depth - a.depth);
     hitRegions = [];
     labelRegions = [];
@@ -840,7 +976,7 @@
         ctx.fill();
         if (s.edge) {
           ctx.lineWidth = s.part === P.selected ? Math.max(s.lw, 0.9) : s.lw;
-          ctx.strokeStyle = s.part === P.selected ? "#f6c777" : s.edge;
+          ctx.strokeStyle = s.part === P.selected ? "#bd8225" : s.edge;
           ctx.stroke();
         }
       }
@@ -857,7 +993,7 @@
       }
     }
     // Floating component labels
-    for (let [id, label, pos] of [
+    for (let [id, label, pos, auxiliary] of [
       ["solar", "SOLAR", [-163, 112, -80]],
       ["charge", "ŞARJ", [-61, 29, -87]],
       ["battery", "PİL", [20, 49, -83]],
@@ -868,14 +1004,17 @@
       ["switch", "ON/OFF", [151, 34, 98]],
       ["motor", "BOBİN", [-73, 70, 89]],
       ["fan", "PERVANE", [20, 89, 89]],
+      ["charge", "F1*", [-83, 31, -34], true],
+      ["motor", "MOTOR BESLEMESİ*", [84, 39, 89], true],
+      ["charge", "SYS− / GND", [185, 30, 58], true],
     ]) {
       const q = proj(pos);
       if (q[2] < 0) continue;
       const active = id === P.selected;
       ctx.font = (active ? "bold 11px" : "bold 9px") + " system-ui";
       let ww = ctx.measureText(label).width + 15;
-      ctx.fillStyle = active ? "#ffe0a1" : "#102432ed";
-      ctx.strokeStyle = active ? "#ffd079" : "#446374";
+      ctx.fillStyle = active ? "#ffe0a1" : "#fffffff2";
+      ctx.strokeStyle = active ? "#b98529" : "#97aab8";
       ctx.lineWidth = 1;
       let xx = q[0] - ww / 2,
         yy = q[1] - 12;
@@ -906,10 +1045,10 @@
       ctx.beginPath();
       roundedRect(xx, yy, ww, 19, 6);
       labelRegions.push({ id, x: xx, y: yy, w: ww, h: 19 });
-      targets[id] = { x: q[0], y: yy + 9.8 };
+      if (!auxiliary) targets[id] = { x: q[0], y: yy + 9.8 };
       ctx.fill();
       ctx.stroke();
-      ctx.fillStyle = active ? "#342714" : "#c7dfef";
+      ctx.fillStyle = active ? "#342714" : "#294657";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(label, q[0], yy + 9.8);
@@ -918,7 +1057,7 @@
     if (P.selected && C[P.selected] && P.selected !== "base") {
       let q = proj(C[P.selected].pos);
       if (q[2] > 0) {
-        ctx.strokeStyle = "#ffd079";
+        ctx.strokeStyle = "#b87b20";
         ctx.lineWidth = 1.5;
         ctx.setLineDash([3, 4]);
         ctx.beginPath();
@@ -927,6 +1066,7 @@
         ctx.setLineDash([]);
       }
     }
+    drawTerminals();
     canvas.dataset.targets = JSON.stringify(targets);
   }
   invalidate();
@@ -939,6 +1079,13 @@
     return Math.hypot(a[1].x - a[0].x, a[1].y - a[0].y);
   }
   function pick(x, y) {
+    for (let i = terminalRegions.length - 1; i >= 0; i--) {
+      const r = terminalRegions[i];
+      if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
+        select(r.id, true, canvas);
+        return;
+      }
+    }
     for (let i = labelRegions.length - 1; i >= 0; i--) {
       const r = labelRegions[i];
       if (
@@ -1055,6 +1202,15 @@
     markView("perspective");
     select("motor");
   }
+  document.getElementById("terminalToggle")?.addEventListener("click", (e) => {
+    P.terminals = !P.terminals;
+    e.currentTarget.setAttribute("aria-pressed", String(P.terminals));
+    invalidate();
+  });
+  document.addEventListener("lab:select-part", (event) => {
+    const id = owner(event.detail?.id);
+    if (C[id]) select(id, true, event.detail?.opener || canvas);
+  });
   document.getElementById("zoomIn").onclick = () => zoom(0.83);
   document.getElementById("zoomOut").onclick = () => zoom(1.2);
   document.getElementById("reset").onclick = reset;
@@ -1200,7 +1356,7 @@
       button.classList.toggle("active", active);
       button.tabIndex = active ? 0 : -1;
     }
-    for (const panel of ["parts", "energy", "physics"]) {
+    for (const panel of ["parts", "wiring", "energy", "physics"]) {
       const element = document.getElementById(panel + "Panel");
       if (element) element.hidden = panel !== name;
     }

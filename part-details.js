@@ -154,7 +154,7 @@ window.PART_DETAILS = {
       },
       {
         title: "Örnek tasarım seçenekleri",
-        text: "Yaklaşık 3,0–4,2 V pil aralığından 5 V için bu aralığı destekleyen boost seçilebilir. Sabit 3,3 V için hem yükseltebilen hem düşürebilen buck-boost gerekir; kartın kabul ettiği giriş ayrıca doğrulanır.",
+        text: "Bu bağlantı örneğinde, gerçek SYS çıkış aralığını kapsayan izolesiz bir buck-boost ile sabit 3,3 V üretilir. SYS gerilimi her kartta pil gerilimine eşit değildir; giriş aralığı seçilen şarj kartıyla birlikte doğrulanır.",
       },
     ],
     physics: [
@@ -174,12 +174,12 @@ window.PART_DETAILS = {
       },
       {
         title: "Akım ve pil sınırı",
-        text: "Dönüştürücünün giriş aralığı, akım kapasitesi ve düşük pil davranışı doğrulanmalıdır. Motorun kalkış veya sıkışma akımı, normal çalışmasındaki akımdan daha yüksek olabilir.",
+        text: "Dönüştürücünün giriş aralığı, akım kapasitesi ve düşük gerilim davranışı doğrulanmalıdır. Bu modül elektronik kolunu besler; motor için gerilim ve kalkış / kilitlenme akımına uygun ayrı bir besleme ve koruma tasarımı seçilir.",
       },
     ],
     fact: {
-      label: "Örnek pil aralığı",
-      value: "3,0–4,2 V → uygun sabit besleme",
+      label: "Bu plandaki elektronik besleme",
+      value: "SYS aralığına uygun giriş → sabit 3,3 V",
     },
     accent: "#dfa365",
   },
@@ -189,7 +189,7 @@ window.PART_DETAILS = {
     overview: [
       {
         title: "Hangi kol ölçülüyor?",
-        text: "Sensörün devredeki yeri, ölçümün neyi temsil ettiğini belirler. Motor kolundaki akım ile tüm sistemin akımı aynı şey değildir; sunumda ölçüm noktası açıkça belirtilmelidir.",
+        text: "Bu planda INA219, SYS çıkışından sonra elektronik ve motor kollarının toplam yük akımını ölçer. Pilin şarj akımı bu ölçümün içinde değildir. VIN−, şöntün yük çıkışıdır; GND değildir.",
       },
       {
         title: "Ölçümden ekrana",
@@ -249,7 +249,7 @@ window.PART_DETAILS = {
       },
       {
         title: "Kart modelini tanıyın",
-        text: "ESP32 geliştirme kartlarının besleme girişleri farklı olabilir. USB, 5 V ve 3V3 etiketlerini eşdeğer kabul etmeyin; besleme ve sinyal koşullarını kartın belgelerinden doğrulayın.",
+        text: "Bu örnek harici 3V3 girişine uygun olduğu doğrulanmış ESP32 kartını ve ayrılmış USB bağlantısını varsayar. USB, 5 V ve 3V3 girişlerini eşdeğer kabul etmeyin; besleme koşullarını kartın belgelerinden doğrulayın.",
       },
     ],
     fact: { label: "Verinin izlediği yol", value: "Sensör → program → ekran" },
