@@ -39,6 +39,7 @@
         selected: P.selected,
         wires: String(P.wires),
         terminalsVisible: String(P.terminals),
+        labelsVisible: String(P.labels),
         running: String(P.run),
         renderCount: String(renderCount),
       });
@@ -74,6 +75,7 @@
     targetZ: 0,
     wires: true,
     terminals: true,
+    labels: true,
     selected: "motor",
   };
   const C = {
@@ -646,7 +648,7 @@
         w: 14,
         h: 14,
       });
-      if (owner(terminal.part) !== P.selected) continue;
+      if (!P.labels || owner(terminal.part) !== P.selected) continue;
       const label = terminal.label;
       ctx.font = "bold 9px system-ui";
       const width = ctx.measureText(label).width + 12;
@@ -953,6 +955,8 @@
     hitRegions = [];
     labelRegions = [];
     const targets = {};
+    const geometryTargets = {},
+      geometryAreas = {};
     for (let s of shapes) {
       const pts = s.points.map(proj);
       ctx.globalAlpha = s.alpha ?? 1;
@@ -972,6 +976,23 @@
         for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
         ctx.closePath();
         if (s.part) hitRegions.push({ id: s.part, points: pts });
+        // Keep body-face targets independent of floating annotations.
+        if (s.part === "oled" || s.part === "battery") {
+          let area = 0;
+          for (let i = 0; i < pts.length; i++) {
+            const a = pts[i],
+              b = pts[(i + 1) % pts.length];
+            area += a[0] * b[1] - b[0] * a[1];
+          }
+          area = Math.abs(area) / 2;
+          if (area > (geometryAreas[s.part] || 0)) {
+            geometryAreas[s.part] = area;
+            geometryTargets[s.part] = {
+              x: pts.reduce((sum, p) => sum + p[0], 0) / pts.length,
+              y: pts.reduce((sum, p) => sum + p[1], 0) / pts.length,
+            };
+          }
+        }
         ctx.fillStyle = s.color;
         ctx.fill();
         if (s.edge) {
@@ -992,67 +1013,68 @@
         ctx.fillText("78%", screen[0], screen[1] + 4);
       }
     }
-    // Floating component labels
-    for (let [id, label, pos, auxiliary] of [
-      ["solar", "SOLAR", [-163, 112, -80]],
-      ["charge", "ŞARJ", [-61, 29, -87]],
-      ["battery", "PİL", [20, 49, -83]],
-      ["reg", "DC-DC", [113, 29, -80]],
-      ["sensor", "INA219", [-42, 34, 14]],
-      ["esp", "ESP32", [57, 34, 14]],
-      ["oled", "OLED", [155, 82, 14]],
-      ["switch", "ON/OFF", [151, 34, 98]],
-      ["motor", "BOBİN", [-73, 70, 89]],
-      ["fan", "PERVANE", [20, 89, 89]],
-      ["charge", "F1*", [-83, 31, -34], true],
-      ["motor", "MOTOR BESLEMESİ*", [84, 39, 89], true],
-      ["charge", "SYS− / GND", [185, 30, 58], true],
-    ]) {
-      const q = proj(pos);
-      if (q[2] < 0) continue;
-      const active = id === P.selected;
-      ctx.font = (active ? "bold 11px" : "bold 9px") + " system-ui";
-      let ww = ctx.measureText(label).width + 15;
-      ctx.fillStyle = active ? "#ffe0a1" : "#fffffff2";
-      ctx.strokeStyle = active ? "#b98529" : "#97aab8";
-      ctx.lineWidth = 1;
-      let xx = q[0] - ww / 2,
-        yy = q[1] - 12;
-      if (xx < 0 || xx + ww > W || yy < 0 || yy > H - 19) continue;
-      // Place crowded mobile labels in a nearby free row, retaining their hit areas.
-      const placedY = [0, -23, 23, -46, 46, -69, 69]
-        .map((offset) => yy + offset)
-        .find(
-          (y) =>
-            y >= 4 &&
-            y + 19 <= H - 4 &&
-            !labelRegions.some(
-              (r) =>
-                xx < r.x + r.w + 3 &&
-                xx + ww + 3 > r.x &&
-                y < r.y + r.h + 3 &&
-                y + 22 > r.y,
-            ),
-        );
-      if (placedY === undefined) continue;
-      if (placedY !== yy) {
+    // Hidden annotations do not leave invisible hit areas; physical faces remain selectable.
+    if (P.labels)
+      for (let [id, label, pos, auxiliary] of [
+        ["solar", "SOLAR", [-163, 112, -80]],
+        ["charge", "ŞARJ", [-61, 29, -87]],
+        ["battery", "PİL", [20, 49, -83]],
+        ["reg", "DC-DC", [113, 29, -80]],
+        ["sensor", "INA219", [-42, 34, 14]],
+        ["esp", "ESP32", [57, 34, 14]],
+        ["oled", "OLED", [155, 82, 14]],
+        ["switch", "ON/OFF", [151, 34, 98]],
+        ["motor", "BOBİN", [-73, 70, 89]],
+        ["fan", "PERVANE", [20, 89, 89]],
+        ["charge", "F1*", [-83, 31, -34], true],
+        ["motor", "MOTOR BESLEMESİ*", [84, 39, 89], true],
+        ["charge", "SYS− / GND", [185, 30, 58], true],
+      ]) {
+        const q = proj(pos);
+        if (q[2] < 0) continue;
+        const active = id === P.selected;
+        ctx.font = (active ? "bold 11px" : "bold 9px") + " system-ui";
+        let ww = ctx.measureText(label).width + 15;
+        ctx.fillStyle = active ? "#ffe0a1" : "#fffffff2";
+        ctx.strokeStyle = active ? "#b98529" : "#97aab8";
+        ctx.lineWidth = 1;
+        let xx = q[0] - ww / 2,
+          yy = q[1] - 12;
+        if (xx < 0 || xx + ww > W || yy < 0 || yy > H - 19) continue;
+        // Place crowded mobile labels in a nearby free row, retaining their hit areas.
+        const placedY = [0, -23, 23, -46, 46, -69, 69]
+          .map((offset) => yy + offset)
+          .find(
+            (y) =>
+              y >= 4 &&
+              y + 19 <= H - 4 &&
+              !labelRegions.some(
+                (r) =>
+                  xx < r.x + r.w + 3 &&
+                  xx + ww + 3 > r.x &&
+                  y < r.y + r.h + 3 &&
+                  y + 22 > r.y,
+              ),
+          );
+        if (placedY === undefined) continue;
+        if (placedY !== yy) {
+          ctx.beginPath();
+          ctx.moveTo(q[0], q[1]);
+          ctx.lineTo(q[0], placedY + 9.5);
+          ctx.stroke();
+        }
+        yy = placedY;
         ctx.beginPath();
-        ctx.moveTo(q[0], q[1]);
-        ctx.lineTo(q[0], placedY + 9.5);
+        roundedRect(xx, yy, ww, 19, 6);
+        labelRegions.push({ id, x: xx, y: yy, w: ww, h: 19 });
+        if (!auxiliary) targets[id] = { x: q[0], y: yy + 9.8 };
+        ctx.fill();
         ctx.stroke();
+        ctx.fillStyle = active ? "#342714" : "#294657";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(label, q[0], yy + 9.8);
       }
-      yy = placedY;
-      ctx.beginPath();
-      roundedRect(xx, yy, ww, 19, 6);
-      labelRegions.push({ id, x: xx, y: yy, w: ww, h: 19 });
-      if (!auxiliary) targets[id] = { x: q[0], y: yy + 9.8 };
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = active ? "#342714" : "#294657";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(label, q[0], yy + 9.8);
-    }
     // Selected part reticle, active to give tangible response
     if (P.selected && C[P.selected] && P.selected !== "base") {
       let q = proj(C[P.selected].pos);
@@ -1067,7 +1089,9 @@
       }
     }
     drawTerminals();
+    canvas.dataset.labelCount = String(labelRegions.length);
     canvas.dataset.targets = JSON.stringify(targets);
+    canvas.dataset.geometryTargets = JSON.stringify(geometryTargets);
   }
   invalidate();
 
@@ -1202,9 +1226,18 @@
     markView("perspective");
     select("motor");
   }
+  document
+    .getElementById("labelsToggle")
+    ?.addEventListener("click", (event) => {
+      P.labels = !P.labels;
+      event.currentTarget.setAttribute("aria-pressed", String(P.labels));
+      event.currentTarget.classList.toggle("toggled", P.labels);
+      invalidate();
+    });
   document.getElementById("terminalToggle")?.addEventListener("click", (e) => {
     P.terminals = !P.terminals;
     e.currentTarget.setAttribute("aria-pressed", String(P.terminals));
+    e.currentTarget.classList.toggle("toggled", P.terminals);
     invalidate();
   });
   document.addEventListener("lab:select-part", (event) => {

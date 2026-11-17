@@ -12,7 +12,7 @@
       content="Güneş ışığının harekete dönüştüğü etkileşimli fizik laboratuvarı. 3D motor modelini döndür, parçalarını keşfet ve enerji yolculuğunu incele."
     />
     <title>Güneş Lab — Işıktan harekete.</title>
-    <link rel="stylesheet" href="./styles.css?v=bench-3" />
+    <link rel="stylesheet" href="./styles.css?v=bench-4" />
   </head>
   <body>
     <a class="skip-link" href="#view">3D modele geç</a>
@@ -176,6 +176,18 @@
                     <path d="M6 4v4M4 6h4" />
                     <circle cx="14" cy="14" r="4" />
                     <path d="M12 14h4" />
+                  </svg>
+                </button>
+                <button
+                  class="control toggled"
+                  id="labelsToggle"
+                  type="button"
+                  aria-label="Yazıları göster/gizle"
+                  aria-pressed="true"
+                  title="Parça adlarını ve uç etiketlerini göster/gizle"
+                >
+                  <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M3 4h14M10 4v12M7 16h6M3 4v3m14-3v3" />
                   </svg>
                 </button>
               </div>
@@ -458,10 +470,7 @@
                 role="group"
                 aria-label="Bağlantı grubu"
               ></div>
-              <div
-                id="wirePlanSurface"
-                class="wire-plan-surface"
-              ></div>
+              <div id="wirePlanSurface" class="wire-plan-surface"></div>
               <p class="wire-plan-pan-hint">
                 <svg
                   width="16"
@@ -979,11 +988,11 @@
         }, 10000);
       })();
     </script>
-    <script defer src="./part-details.js?v=bench-3"></script>
-    <script defer src="./wiring-plan.js?v=bench-3"></script>
+    <script defer src="./part-details.js?v=bench-4"></script>
+    <script defer src="./wiring-plan.js?v=bench-4"></script>
     <script
       defer
-      src="./model.js?v=bench-3"
+      src="./model.js?v=bench-4"
       onerror="window.showModelError(new Error('model.js yüklenemedi'))"
     ></script>
   </body>
