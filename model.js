@@ -23,7 +23,8 @@
         P.spin =
           (P.spin +
             Math.min(lastTime === null ? 0 : (time - lastTime) / 1000, 0.05) *
-              5.7) %
+              5.7 *
+              P.speed) %
           (Math.PI * 2);
       lastTime = time;
       render();
@@ -34,6 +35,7 @@
         pitch: String(P.pitch),
         distance: String(P.dist),
         spin: String(P.spin),
+        speed: String(P.speed),
         selected: P.selected,
         wires: String(P.wires),
         running: String(P.run),
@@ -66,6 +68,9 @@
     ty: 12,
     run: false,
     spin: 0,
+    speed: 1,
+    targetX: 0,
+    targetZ: 0,
     wires: true,
     selected: "motor",
   };
@@ -148,8 +153,85 @@
       pos: [0, 4, 0],
     },
   };
+  const details = window.PART_DETAILS || {};
+  const dialog = document.getElementById("partDialog");
+  let detailTab = "overview",
+    dialogOpener = null;
+  const tabNames = {
+    overview: "Görevi",
+    physics: "Nasıl çalışır?",
+    safety: "Dikkat et",
+  };
+  function makeText(tag, text, className = "") {
+    const element = document.createElement(tag);
+    element.textContent = text;
+    if (className) element.className = className;
+    return element;
+  }
+  function renderDetail() {
+    if (!dialog) return;
+    const part = C[P.selected],
+      info = details[P.selected] || {};
+    dialog.style.setProperty("--part-accent", info.accent || "#ffcc70");
+    document.getElementById("detailIcon").textContent = part.icon;
+    document.getElementById("detailCategory").textContent =
+      info.category || "Proje parçası";
+    document.getElementById("detailName").textContent = part.name;
+    document.getElementById("detailSummary").textContent =
+      info.tagline || part.desc;
+    document
+      .getElementById("detailSpecs")
+      .replaceChildren(...part.meta.map((meta) => makeText("span", meta)));
+    document.getElementById("partPosition").textContent =
+      `${order.indexOf(P.selected) + 1} / ${order.length}`;
+    const panel = document.getElementById("detailPanel");
+    panel.setAttribute("aria-label", tabNames[detailTab]);
+    panel.setAttribute("aria-labelledby", `detail-tab-${detailTab}`);
+    const cards = info[detailTab] || [
+      { title: tabNames[detailTab], text: part.desc },
+    ];
+    const sections = cards.map((card) => {
+      const section = document.createElement("section");
+      section.className = "detail-section";
+      section.append(makeText("h3", card.title), makeText("p", card.text));
+      return section;
+    });
+    if (info.fact && detailTab === "overview") {
+      const fact = document.createElement("div");
+      fact.className = "detail-fact";
+      fact.append(
+        makeText("span", info.fact.label),
+        makeText("strong", info.fact.value),
+      );
+      sections.push(fact);
+    }
+    panel.replaceChildren(...sections);
+    for (const button of document.querySelectorAll("[data-detail-tab]")) {
+      const active = button.dataset.detailTab === detailTab;
+      button.id = `detail-tab-${button.dataset.detailTab}`;
+      button.setAttribute("aria-selected", String(active));
+      button.classList.toggle("active", active);
+      button.tabIndex = active ? 0 : -1;
+    }
+  }
+  function showDetails(opener) {
+    if (!dialog) return;
+    if (!dialog.open) {
+      const trigger = opener?.currentTarget || opener;
+      dialogOpener =
+        trigger instanceof HTMLElement
+          ? trigger
+          : document.activeElement instanceof HTMLElement &&
+              document.activeElement !== document.body
+            ? document.activeElement
+            : canvas;
+      detailTab = "overview";
+      renderDetail();
+      dialog.showModal();
+      document.body.classList.add("dialog-open");
+    } else renderDetail();
+  }
   const order = [
-    "base",
     "solar",
     "charge",
     "battery",
@@ -160,23 +242,41 @@
     "switch",
     "motor",
     "fan",
+    "base",
   ];
   let elParts = document.getElementById("parts");
   order.forEach((id) => {
     const b = document.createElement("button");
     b.className = "part";
-    b.textContent = C[id].icon + " " + C[id].name;
+    const mark = makeText("span", C[id].icon, "part-mark");
+    mark.setAttribute("aria-hidden", "true");
+    const copy = document.createElement("span");
+    copy.className = "part-copy";
+    copy.append(
+      makeText("span", C[id].name, "part-title"),
+      makeText("span", details[id]?.category || "Maket parçası", "part-role"),
+    );
+    const arrow = makeText("span", "", "part-arrow");
+    arrow.innerHTML =
+      '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 8-8M4 4h8v8"/></svg>';
+    arrow.setAttribute("aria-hidden", "true");
+    b.append(mark, copy, arrow);
     b.dataset.part = id;
     b.setAttribute("aria-pressed", "false");
-    b.addEventListener("click", () => select(id));
+    b.addEventListener("click", (event) =>
+      select(id, true, event.currentTarget),
+    );
     elParts.appendChild(b);
   });
-  function select(id) {
+  function select(id, open = false, opener = null) {
     if (!C[id]) return;
     P.selected = id;
     let a = C[id];
     document.getElementById("componentName").textContent = a.name;
     document.getElementById("componentIcon").textContent = a.icon;
+    const category = document.getElementById("componentCategory");
+    if (category)
+      category.textContent = details[id]?.category || "Proje parçası";
     document.getElementById("componentDesc").textContent = a.desc;
     document.getElementById("componentMeta").innerHTML = a.meta
       .map((x) => "<span>" + x + "</span>")
@@ -185,6 +285,8 @@
       x.classList.toggle("selected", x.dataset.part === id);
       x.setAttribute("aria-pressed", String(x.dataset.part === id));
     });
+    if (dialog?.open) renderDetail();
+    if (open) showDetails(opener);
     invalidate();
   }
   function resize() {
@@ -227,22 +329,26 @@
   function setupCamera() {
     let c = Math.cos(P.pitch),
       s = Math.sin(P.pitch),
-      t = [0, P.ty, 0],
+      t = [P.targetX, P.ty, P.targetZ],
       pos = [
-        Math.sin(P.yaw) * c * P.dist,
+        P.targetX + Math.sin(P.yaw) * c * P.dist,
         s * P.dist + P.ty,
-        Math.cos(P.yaw) * c * P.dist,
+        P.targetZ + Math.cos(P.yaw) * c * P.dist,
       ],
       f = norm(t.map((q, i) => q - pos[i])),
       r = norm(cross(f, [0, 1, 0])),
       u = cross(r, f);
-    camera = { pos, f, r, u, focal: Math.min(W / 1.04, H / 0.68) * 1.16 };
+    camera = { pos, f, r, u, focal: Math.min(W / 1.04, H / 0.95) * 1.16 };
   }
   function proj(q) {
     const a = q.map((x, i) => x - camera.pos[i]),
       z = dot(a, camera.f),
       k = camera.focal / Math.max(40, z);
-    return [W / 2 + dot(a, camera.r) * k, H * 0.53 - dot(a, camera.u) * k, z];
+    return [
+      W / 2 + dot(a, camera.r) * k,
+      H * (W / H > 1.2 ? 0.46 : 0.53) - dot(a, camera.u) * k,
+      z,
+    ];
   }
   function poly(points, color, edge = "", lw = 0.5, alpha = 1) {
     const avg = points.reduce((n, p) => n + proj(p)[2], 0) / points.length;
@@ -645,8 +751,22 @@
   }
   function render() {
     if (!W || !H) return;
-    ctx.fillStyle = "#0b1728";
+    const background = ctx.createRadialGradient(
+      W * 0.52,
+      H * 0.47,
+      0,
+      W * 0.52,
+      H * 0.47,
+      Math.max(W, H) * 0.75,
+    );
+    background.addColorStop(0, "#142d3c");
+    background.addColorStop(0.55, "#0c1c29");
+    background.addColorStop(1, "#09121c");
+    ctx.fillStyle = background;
     ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "#91afc015";
+    for (let x = 18; x < W; x += 28)
+      for (let y = 18; y < H; y += 28) ctx.fillRect(x, y, 1, 1);
     setupCamera();
     shapes = [];
     sceneLayer = 0;
@@ -719,8 +839,8 @@
         ctx.fillStyle = s.color;
         ctx.fill();
         if (s.edge) {
-          ctx.lineWidth = s.lw;
-          ctx.strokeStyle = s.edge;
+          ctx.lineWidth = s.part === P.selected ? Math.max(s.lw, 0.9) : s.lw;
+          ctx.strokeStyle = s.part === P.selected ? "#f6c777" : s.edge;
           ctx.stroke();
         }
       }
@@ -754,8 +874,8 @@
       const active = id === P.selected;
       ctx.font = (active ? "bold 11px" : "bold 9px") + " system-ui";
       let ww = ctx.measureText(label).width + 15;
-      ctx.fillStyle = active ? "#b9eff9" : "#0d2238d9";
-      ctx.strokeStyle = active ? "#68d8ee" : "#42637a";
+      ctx.fillStyle = active ? "#ffe0a1" : "#102432ed";
+      ctx.strokeStyle = active ? "#ffd079" : "#446374";
       ctx.lineWidth = 1;
       let xx = q[0] - ww / 2,
         yy = q[1] - 12;
@@ -789,7 +909,7 @@
       targets[id] = { x: q[0], y: yy + 9.8 };
       ctx.fill();
       ctx.stroke();
-      ctx.fillStyle = active ? "#123345" : "#c7dfef";
+      ctx.fillStyle = active ? "#342714" : "#c7dfef";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(label, q[0], yy + 9.8);
@@ -798,7 +918,7 @@
     if (P.selected && C[P.selected] && P.selected !== "base") {
       let q = proj(C[P.selected].pos);
       if (q[2] > 0) {
-        ctx.strokeStyle = "#6be7f4";
+        ctx.strokeStyle = "#ffd079";
         ctx.lineWidth = 1.5;
         ctx.setLineDash([3, 4]);
         ctx.beginPath();
@@ -827,7 +947,7 @@
         y >= r.y - 5 &&
         y <= r.y + r.h + 5
       ) {
-        select(r.id);
+        select(r.id, true, canvas);
         return;
       }
     }
@@ -845,7 +965,7 @@
           inside = !inside;
       }
       if (inside) {
-        select(r.id);
+        select(r.id, true, canvas);
         return;
       }
     }
@@ -883,6 +1003,7 @@
     } else if (pointers.size === 1 && !gesture.multi) {
       P.yaw -= (e.clientX - old.x) * 0.007;
       P.pitch = clamp(P.pitch + (e.clientY - old.y) * 0.006, 0.13, 1.43);
+      markView("free");
     }
     invalidate();
     e.preventDefault();
@@ -929,6 +1050,9 @@
     P.pitch = 0.67;
     P.dist = 700;
     P.ty = 12;
+    P.targetX = 0;
+    P.targetZ = 0;
+    markView("perspective");
     select("motor");
   }
   document.getElementById("zoomIn").onclick = () => zoom(0.83);
@@ -948,8 +1072,149 @@
       : "▶ Pervaneyi döndür";
     e.currentTarget.classList.toggle("off", !P.run);
     e.currentTarget.setAttribute("aria-pressed", String(P.run));
+    const status = document.getElementById("motorStatus");
+    if (status)
+      status.textContent = P.run ? "Pervane dönüyor" : "Denemeye hazır";
+    stage.classList.toggle("motor-running", P.run);
     invalidate();
   };
+  function markView(name) {
+    for (const button of document.querySelectorAll("[data-view]"))
+      button.setAttribute("aria-pressed", String(button.dataset.view === name));
+    const status = document.getElementById("viewStatus");
+    if (status)
+      status.textContent =
+        {
+          perspective: "Perspektif",
+          top: "Üstten görünüm",
+          front: "Önden görünüm",
+          focus: "Parça odağı",
+        }[name] || "Serbest görünüm";
+  }
+  function focusSelected() {
+    const position = C[P.selected].pos;
+    P.targetX = position[0];
+    P.ty = position[1];
+    P.targetZ = position[2];
+    P.dist = P.selected === "base" ? 700 : 420;
+    dialogOpener = canvas;
+    if (dialog?.open) dialog.close();
+    markView("focus");
+    invalidate();
+    stage.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "instant"
+        : "smooth",
+      block: "center",
+    });
+    canvas.focus({ preventScroll: true });
+  }
+  for (const button of document.querySelectorAll("[data-view]"))
+    button.addEventListener("click", () => {
+      P.targetX = 0;
+      P.targetZ = 0;
+      P.ty = 12;
+      P.dist = 700;
+      const preset = {
+        perspective: [0.73, 0.67],
+        top: [0, 1.43],
+        front: [0, 0.22],
+      }[button.dataset.view];
+      if (preset) {
+        [P.yaw, P.pitch] = preset;
+        markView(button.dataset.view);
+        invalidate();
+      }
+    });
+  document
+    .getElementById("inspectPart")
+    ?.addEventListener("click", showDetails);
+  document
+    .getElementById("tourBtn")
+    ?.addEventListener("click", (event) =>
+      select("solar", true, event.currentTarget),
+    );
+  document
+    .getElementById("closeDetail")
+    ?.addEventListener("click", () => dialog.close());
+  document
+    .getElementById("focusPart")
+    ?.addEventListener("click", focusSelected);
+  document
+    .getElementById("prevPart")
+    ?.addEventListener("click", () =>
+      select(
+        order[(order.indexOf(P.selected) + order.length - 1) % order.length],
+      ),
+    );
+  document
+    .getElementById("nextPart")
+    ?.addEventListener("click", () =>
+      select(order[(order.indexOf(P.selected) + 1) % order.length]),
+    );
+  dialog?.addEventListener("close", () => {
+    document.body.classList.remove("dialog-open");
+    if (dialogOpener?.isConnected) dialogOpener.focus({ preventScroll: true });
+  });
+  dialog?.addEventListener("click", (e) => {
+    if (e.target !== dialog) return;
+    const rect = dialog.getBoundingClientRect();
+    if (
+      e.clientX < rect.left ||
+      e.clientX > rect.right ||
+      e.clientY < rect.top ||
+      e.clientY > rect.bottom
+    )
+      dialog.close();
+  });
+  function wireTabs(selector, attribute, selectTab) {
+    const buttons = [...document.querySelectorAll(selector)];
+    for (const button of buttons) {
+      button.addEventListener("click", () =>
+        selectTab(button.dataset[attribute]),
+      );
+      button.addEventListener("keydown", (e) => {
+        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+        const index = buttons.indexOf(button),
+          next =
+            e.key === "Home"
+              ? 0
+              : e.key === "End"
+                ? buttons.length - 1
+                : (index + (e.key === "ArrowRight" ? 1 : buttons.length - 1)) %
+                  buttons.length;
+        e.preventDefault();
+        buttons[next].focus();
+        selectTab(buttons[next].dataset[attribute]);
+      });
+    }
+  }
+  wireTabs("[data-detail-tab]", "detailTab", (name) => {
+    detailTab = name;
+    renderDetail();
+  });
+  wireTabs("[data-explore]", "explore", (name) => {
+    for (const button of document.querySelectorAll("[data-explore]")) {
+      const active = button.dataset.explore === name;
+      button.setAttribute("aria-selected", String(active));
+      button.classList.toggle("active", active);
+      button.tabIndex = active ? 0 : -1;
+    }
+    for (const panel of ["parts", "energy", "physics"]) {
+      const element = document.getElementById(panel + "Panel");
+      if (element) element.hidden = panel !== name;
+    }
+  });
+  for (const button of document.querySelectorAll("[data-select-part]"))
+    button.addEventListener("click", (event) =>
+      select(button.dataset.selectPart, true, event.currentTarget),
+    );
+  document.getElementById("spinSpeed")?.addEventListener("input", (e) => {
+    P.speed = clamp(Number(e.target.value) || 1, 0.3, 2);
+    document.getElementById("speedValue").textContent =
+      P.speed.toLocaleString("tr-TR", { maximumFractionDigits: 1 }) + "×";
+    invalidate();
+  });
   canvas.addEventListener("keydown", (e) => {
     switch (e.key) {
       case "ArrowLeft":
@@ -977,6 +1242,7 @@
       default:
         return;
     }
+    if (e.key.startsWith("Arrow")) markView("free");
     e.preventDefault();
     invalidate();
   });
